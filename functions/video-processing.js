@@ -38,12 +38,6 @@ exports.generateSocialMedia = async (videoId) => {
     // Generate thumbnail
     video.processingStatus = "generating thumbnail";
     await video.save();
-    // const thumbnailPath = await generateVideoThumbnail(
-    //   video.filePath,
-    //   path.dirname(video.filePath)
-    // );
-    // video.thumbnailPath = thumbnailPath;
-    // console.log("Thumbnail generated:", thumbnailPath);
 
     video.processingStatus = "generating social media";
     await video.save();
@@ -94,7 +88,6 @@ exports.generateSocialMedia = async (videoId) => {
     if (!user.isPremium) {
       await fs.unlink(video.filePath);
       video.filePath = null; // Clear the file path as the video no longer exists
-      console.log(`Video file deleted for non-premium user: ${user._id}`);
     }
 
     video.processingStatus = "completed";

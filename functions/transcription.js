@@ -18,8 +18,6 @@ async function transcribeVideo(videoPath, options = {}) {
 
   let audioPath;
   try {
-    console.log("Starting video transcription...");
-
     // Generate audio file path (same name as video but with .wav extension)
     const audioFileName =
       path.basename(videoPath, path.extname(videoPath)) + ".wav";
@@ -34,7 +32,6 @@ async function transcribeVideo(videoPath, options = {}) {
         .on("end", resolve)
         .save(audioPath);
     });
-    console.log("Audio conversion completed:", audioPath);
 
     // Transcribe audio using node-whisper
     const result = await whisper(audioPath, {
@@ -54,7 +51,6 @@ async function transcribeVideo(videoPath, options = {}) {
 
     // Clean up the temporary audio file
     await fs.unlink(audioPath);
-    console.log("Audio file cleaned up:", audioPath);
 
     // Delete the original video if specified
     if (deleteVideo) {
@@ -64,7 +60,6 @@ async function transcribeVideo(videoPath, options = {}) {
 
     return transcriptionContent;
   } catch (error) {
-    console.error("Error in video transcription:", error);
     // Attempt to clean up temporary files even if an error occurred
     if (audioPath) {
       try {

@@ -1,9 +1,8 @@
 // openAiSocialMediaGenerator.js
 const OpenAI = require("openai");
-// const { TextServiceClient } = require("@google-ai/generative-ai");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-
 require("dotenv").config();
+
 // Initialize OpenAI API client
 const openai = new OpenAI({
   apiKey: process.env.OpenAI_API_KEY,
@@ -78,18 +77,6 @@ async function generateSocialMediaContent(
         model: "text-bison-001",
       });
       const result = await model.generateContent(prompt);
-      console.log(result.response.text());
-
-      // Print the generated content
-      console.log("Generated Content:", response.candidates[0].output);
-      // const model = GoogleGenerativeAI.getGenerativeModel({
-      //   model: "gemini-pro",
-      // });
-      // const result = await model.generateContent(prompt);
-      // console.log(result);
-      // const response = result.response;
-
-      // content = JSON.parse(response.text());
     }
     // Ensure suggestedTags is an array
     if (!Array.isArray(content.suggestedTags)) {
