@@ -2,7 +2,7 @@
 const whisper = require("node-whisper").default;
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegStatic = require("ffmpeg-static");
-const fs = require("fs");
+const fs = require("fs/promises");
 const path = require("path");
 
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -79,52 +79,3 @@ async function transcribeVideo(videoPath, options = {}) {
 }
 
 module.exports = { transcribeVideo };
-
-// Transcribe video using node-whisper
-// async function transcribeVideo(videoPath) {
-//   try {
-//     console.log("Starting video transcription...");
-
-//     // Generate audio file path (same name as video but with .wav extension)
-//     const audioFileName =
-//       path.basename(videoPath, path.extname(videoPath)) + ".wav";
-//     const audioPath = path.join(global.UPLOADS_DIR, audioFileName);
-
-//     // Convert video to audio (wav format with 16000 Hz frequency)
-//     await new Promise((resolve, reject) => {
-//       ffmpeg(videoPath)
-//         .toFormat("wav")
-//         .audioFrequency(16000)
-//         .on("error", reject)
-//         .on("end", resolve)
-//         .save(audioPath);
-//     });
-//     console.log("Audio conversion completed:", audioPath);
-
-//     // Transcribe audio using node-whisper
-//     const result = await whisper(audioPath, {
-//       language: "en", // Specify language
-//       device: "cpu", // Set device as 'cpu' or 'cuda'
-//       model: "base", // Model name (base, small, medium, etc.)
-//       output_format: "txt", // Output format (txt, vtt, json, etc.)
-//     });
-
-//     console.log("Transcription result:", result);
-
-//     // Check for valid transcription result
-//     if (!result || !result.txt) {
-//       throw new Error("Transcription failed: No text output");
-//     }
-//     const transcriptionContent = await result.txt.getContent();
-
-//     // Clean up the temporary audio file
-//     fs.unlinkSync(audioPath);
-//     console.log("Audio file cleaned up:", audioPath);
-//     return transcriptionContent;
-//   } catch (error) {
-//     console.error("Error in video transcription:", error);
-//     throw error;
-//   }
-// }
-
-// module.exports = { transcribeVideo };

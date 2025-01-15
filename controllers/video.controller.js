@@ -1,11 +1,27 @@
 // videoController.js
 const Video = require("../models/video.model");
+const User = require("../models/AuthUsers.model");
 const videoQueue = require("../functions/video-queue.process");
 const path = require("path");
 exports.uploadVideo = async (req, res) => {
   try {
     const { description, tags, userId } = req.body;
     const videoPath = path.join(global.UPLOADS_DIR, req.file.filename);
+
+    const UserInfo = await Video.find({ uploadedBy: userId });
+
+    const userDeets = await User.findById(userId);
+
+    if (userDeets.isPremium && userDeets.subscriptionStatus === "paid") {
+      next();
+    } else {
+      if (UserInfo.length >= 3) {
+        return res.status(403).json({
+          message:
+            "You have reached the maximum limit of 3 videos per account. Please upgrade to premium to upload more videos.",
+        });
+      }
+    }
 
     // const videoPath = req.file.path;
     const video = new Video({

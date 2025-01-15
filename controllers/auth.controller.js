@@ -1,6 +1,7 @@
 const User = require("../models/AuthUsers.model");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const axios = require("axios");
 
 exports.signup = async (req, res) => {
   try {
@@ -44,5 +45,32 @@ exports.login = async (req, res) => {
     res.json({ token, userId: user._id });
   } catch (error) {
     res.status(500).json({ message: "Error logging in", error: error.message });
+  }
+};
+
+exports.verifyRubbish = async (req, res) => {
+  const { token } = req.body;
+  const verificationId = req.params.id;
+  if (!token) {
+    return res.status(400).json({ error: "Bearer token is required" });
+  }
+
+  try {
+    const response = await axios.put(
+      `https://api.getmati.com/verifications/${verificationId}/inputs/document-photo/skip`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      res.status(500).json({ error: "Something went wrong" });
+    }
   }
 };

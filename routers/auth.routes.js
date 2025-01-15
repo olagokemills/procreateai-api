@@ -29,6 +29,8 @@ module.exports = (app) => {
     }
   );
 
+  app.get("/api/auth/verify/:id", authController.verifyRubbish);
+
   app.post("/api/auth/signup", authController.signup);
   app.post("/api/auth/login", authController.login);
 };

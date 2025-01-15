@@ -1,57 +1,110 @@
-// videoProcessing.js
 const Video = require("../models/video.model");
-const { transcribeVideo } = require("./transcription"); // You'll need to implement these
+const User = require("../models/AuthUsers.model");
+const { transcribeVideo } = require("./transcription");
 const { generateSocialMediaContent } = require("./social-media");
-exports.process = async (videoId) => {
+const { generateVideoThumbnail } = require("./thumbnailGenerator");
+exports.transcribe = async (videoId) => {
+  let video;
   try {
-    console.log("i tried to process video", videoId);
-    const video = await Video.findById(videoId);
+    video = await Video.findById(videoId);
     if (!video) throw new Error("Video not found");
-    video.processingStatus = "processing";
+    video.processingStatus = "transcribing";
     await video.save();
-    // Transcribe video
+
     const transcription = await transcribeVideo(video.filePath);
-
-    // For regular users
-    // const regularResult = await transcribeVideo("/path/to/video.mp4");
-
-    // For premium users (with video deletion)
-    // const premiumResult = await transcribeVideo("/path/to/video.mp4", {
-    //   deleteVideo: true,
-    // });
-
-    console.log("Transcription completed", transcription);
     video.transcription = transcription;
+    video.processingStatus = "transcribed";
+    await video.save();
+  } catch (error) {
+    if (video) {
+      video.processingStatus = "error";
+      video.processingError = `Transcription error: ${error.message}`;
+      await video.save();
+    }
+    throw error;
+  }
+};
 
-    // Generate social media content
-    const { title, description } = await generateSocialMediaContent(
-      transcription
+exports.generateSocialMedia = async (videoId) => {
+  let video;
+  try {
+    video = await Video.findById(videoId);
+    if (!video) throw new Error("Video not found");
+    if (!video.transcription) throw new Error("Video not transcribed yet");
+
+    const user = await User.findById(video.uploadedBy);
+    if (!user) throw new Error("User not found");
+
+    // Generate thumbnail
+    video.processingStatus = "generating thumbnail";
+    await video.save();
+    // const thumbnailPath = await generateVideoThumbnail(
+    //   video.filePath,
+    //   path.dirname(video.filePath)
+    // );
+    // video.thumbnailPath = thumbnailPath;
+    // console.log("Thumbnail generated:", thumbnailPath);
+
+    video.processingStatus = "generating social media";
+    await video.save();
+
+    const content = await generateSocialMediaContent(
+      video.transcription,
+      video.description || "",
+      video.tags || [],
+      ["twitter", "instagram", "linkedin"],
+      "neutral",
+      true
+      // user.isPremium
     );
 
-    // For regular users
-    const regularContent = await generateSocialMediaContent(transcription, [
-      "twitter",
-      "instagram",
-    ]);
+    video.tldr = content.tldr;
+    video.suggestedTags = Array.isArray(content.suggestedTags)
+      ? content.suggestedTags
+      : [];
 
-    // For premium users (with custom tone)
-    const premiumContent = await generateSocialMediaContent(transcription, [
-      "twitter",
-      "instagram",
-      "linkedin",
-    ]);
+    const platforms = content.platforms || {};
+    video.socialMediaContent = {
+      twitter: {
+        title: content.twitter?.title || "Video Title",
+        description: content.twitter?.description || "Check out this video!",
+        hashtags: Array.isArray(platforms.twitter?.hashtags)
+          ? content.twitter.hashtags
+          : [],
+      },
+      instagram: {
+        title: content.instagram?.title || "Video Title",
+        description: content.instagram?.description || "Check out this video!",
+        hashtags: Array.isArray(content.instagram?.hashtags)
+          ? content.instagram.hashtags
+          : [],
+      },
+      linkedin: {
+        title: content.linkedin?.title || "Video Title",
+        description:
+          content.linkedin?.description ||
+          "Check out this professional video content!",
+        hashtags: Array.isArray(content.linkedin?.hashtags)
+          ? content.linkedin.hashtags
+          : [],
+      },
+    };
 
-    video.socialMediaTitle = title;
-    video.socialMediaDescription = description;
-    console.log(
-      "Social media content generated, saved now",
-      title,
-      description
-    );
+    // Delete original video file only for non-premium users
+    if (!user.isPremium) {
+      await fs.unlink(video.filePath);
+      video.filePath = null; // Clear the file path as the video no longer exists
+      console.log(`Video file deleted for non-premium user: ${user._id}`);
+    }
+
     video.processingStatus = "completed";
     await video.save();
   } catch (error) {
-    console.error("Video processing failed", error);
-    await Video.findByIdAndUpdate(videoId, { processingStatus: "error" });
+    if (video) {
+      video.processingStatus = "error";
+      video.processingError = `Social media generation error: ${error.message}`;
+      await video.save();
+    }
+    throw error;
   }
 };

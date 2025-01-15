@@ -17,6 +17,7 @@ app.use(
     saveUninitialized: true,
   })
 );
+
 // Initialize Passport and session handling
 app.use(passport.initialize());
 app.use(passport.session());
@@ -59,5 +60,5 @@ mongoose
 //default route
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on portss ${PORT}`);
 });

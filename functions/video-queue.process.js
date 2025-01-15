@@ -1,52 +1,56 @@
-// videoQueue.js
 const Queue = require("bull");
 const Redis = require("ioredis");
 const videoProcessing = require("./video-processing");
 
 require("dotenv").config();
 
-const redisClient = new Redis({
+const redisConfig = {
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
   password: process.env.REDIS_PASSWORD,
-  enableReadyCheck: false, // Disable ready check
+  enableReadyCheck: false,
   maxRetriesPerRequest: null,
-});
+};
 
-// Separate Redis clients for the Queue, as Bull/BullMQ requires different Redis clients for different roles
+const createRedisClient = () => new Redis(redisConfig);
+
 const videoQueue = new Queue("video transcoding", {
-  createClient: function (type) {
+  createClient: (type) => {
     switch (type) {
       case "client":
-        return redisClient; // Reuse the general Redis client for normal operations
       case "subscriber":
-        return new Redis({
-          // Separate Redis client for subscriber mode
-          host: process.env.REDIS_HOST,
-          port: process.env.REDIS_PORT,
-          password: process.env.REDIS_PASSWORD,
-          enableReadyCheck: false,
-          maxRetriesPerRequest: null,
-        });
       case "bclient":
-        return new Redis({
-          // Another Redis client for blocking commands (like BRPOP)
-          host: process.env.REDIS_HOST,
-          port: process.env.REDIS_PORT,
-          password: process.env.REDIS_PASSWORD,
-          enableReadyCheck: false,
-          maxRetriesPerRequest: null,
-        });
+        return createRedisClient();
       default:
-        return redisClient; // Fallback to the general Redis client
+        return createRedisClient();
     }
   },
 });
 
+const transcriptionQueue = new Queue("video transcription", {
+  createClient: createRedisClient,
+});
+const socialMediaQueue = new Queue("social media generation", {
+  createClient: createRedisClient,
+});
+
 videoQueue.process(async (job) => {
-  console.log("Processing video from line 47s", job.data);
-  const { videoId } = job.data;
-  await videoProcessing.process(videoId);
+  await transcriptionQueue.add({ videoId: job.data.videoId });
+});
+
+transcriptionQueue.process(async (job) => {
+  await videoProcessing.transcribe(job.data.videoId);
+  await socialMediaQueue.add({ videoId: job.data.videoId });
+});
+
+socialMediaQueue.process(async (job) => {
+  await videoProcessing.generateSocialMedia(job.data.videoId);
+});
+
+[videoQueue, transcriptionQueue, socialMediaQueue].forEach((queue) => {
+  queue.on("completed", (job) => {});
+
+  queue.on("failed", (job, err) => {});
 });
 
 module.exports = {

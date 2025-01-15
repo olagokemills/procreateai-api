@@ -1,14 +1,12 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const User = require("../models/AuthUsers.model");
-const jwt = require("jsonwebtoken");
-
+require("dotenv").config();
 passport.use(
   new GoogleStrategy(
     {
-      clientID:
-        "78750389435-j6jlnrad61kr1r5tt987jrd8kts663jp.apps.googleusercontent.com",
-      clientSecret: "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",
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {

@@ -1,5 +1,14 @@
 const mongoose = require("mongoose");
 
+const socialMediaContentSchema = new mongoose.Schema(
+  {
+    title: String,
+    description: String,
+    hashtags: [String],
+  },
+  { _id: false }
+);
+
 const videoSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
@@ -11,11 +20,26 @@ const videoSchema = new mongoose.Schema({
     required: true,
   },
   transcription: String,
-  socialMediaDescription: String,
-  socialMediaTitle: String,
+  tldr: String,
+  socialMediaContent: {
+    twitter: socialMediaContentSchema,
+    instagram: socialMediaContentSchema,
+    linkedin: socialMediaContentSchema,
+  },
+  suggestedTags: [String],
+  processingError: String,
   processingStatus: {
     type: String,
-    enum: ["pending", "processing", "completed", "error"],
+    enum: [
+      "pending",
+      "processing",
+      "transcribing",
+      "transcribed",
+      "generating thumbnail",
+      "generating social media",
+      "completed",
+      "error",
+    ],
     default: "pending",
   },
   createdAt: { type: Date, default: Date.now },
