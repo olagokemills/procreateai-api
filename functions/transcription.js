@@ -40,9 +40,6 @@ async function transcribeVideo(videoPath, options = {}) {
       model,
       output_format: outputFormat,
     });
-
-    console.log("Transcription result:", result);
-
     // Check for valid transcription result
     if (!result || !result[outputFormat]) {
       throw new Error(`Transcription failed: No ${outputFormat} output`);
@@ -55,7 +52,6 @@ async function transcribeVideo(videoPath, options = {}) {
     // Delete the original video if specified
     if (deleteVideo) {
       await fs.unlink(videoPath);
-      console.log("Video file deleted:", videoPath);
     }
 
     return transcriptionContent;
@@ -64,10 +60,7 @@ async function transcribeVideo(videoPath, options = {}) {
     if (audioPath) {
       try {
         await fs.unlink(audioPath);
-        console.log("Cleaned up audio file after error:", audioPath);
-      } catch (cleanupError) {
-        console.error("Error cleaning up audio file:", cleanupError);
-      }
+      } catch (cleanupError) {}
     }
     throw error;
   }

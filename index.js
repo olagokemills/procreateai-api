@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(
   session({
-    secret: "BigAssSecret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
   })
@@ -53,11 +53,6 @@ mongoose
   })
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
-
-// Routes (to be added later)
-//app.use("/api/auth", authRoutes);
-// app.use('/api/videos', videoRoutes);
-//default route
 
 app.listen(PORT, () => {
   console.log(`Server running on portss ${PORT}`);
